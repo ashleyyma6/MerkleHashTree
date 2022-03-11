@@ -10,17 +10,17 @@ from hashlib import sha256
 
 test_data = ["alice", "bob", "carlol", "david"]
 
-
 def get_node_hash(data):
     return sha256(data.encode('utf-8')).hexdigest()
 
 def build_tree(data_strings):
+    tree = []
     data_index = 0
     leaf_node_hashes = []
     while(data_index<len(data_strings)):
         leaf_node_hashes.append(get_node_hash(data_strings[data_index]))
         data_index+=1
-    merkle_hash_tree.append(leaf_node_hashes) #add leaf node hashes to tree
+    tree.append(leaf_node_hashes) #add leaf node hashes to tree
     # print("===leaf_node_hashes===")
     # print(leaf_node_hashes)
     
@@ -42,8 +42,9 @@ def build_tree(data_strings):
         # print(len(new_hashes))
         # print("===new_hashes===")
         # print(new_hashes)        
-        merkle_hash_tree.insert(0,new_hashes)
+        tree.insert(0,new_hashes)
         curr_hashes=new_hashes
+    return tree
 
 # ./buildmtree.py [alice,bob,carlol,david]
 # no space
@@ -61,13 +62,15 @@ def export_tree(tree):
             line = ','.join(level)
             f.write(line+'\n')
 
-merkle_hash_tree = []
-input_list = test_data
-if(len(sys.argv)>1):
-    #print(sys.argv[1])
-    input_list = load_input(sys.argv[1])
-build_tree(input_list)
-# print("===merkle_hash_tree===")
-# print(merkle_hash_tree)
-export_tree(merkle_hash_tree)
-print("export!")
+def main():
+    input_list = test_data
+    if(len(sys.argv)>1):
+        #print(sys.argv[1])
+        input_list = load_input(sys.argv[1])
+    merkle_hash_tree = build_tree(input_list)
+    # print("===merkle_hash_tree===")
+    # print(merkle_hash_tree)
+    export_tree(merkle_hash_tree)
+    print("export!!")
+
+main()
