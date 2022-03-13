@@ -11,6 +11,7 @@ from hashlib import sha256
 test_data = ["alice", "bob", "carlol", "david"]
 
 def get_node_hash(data):
+    print("data to hash: ",data)
     return sha256(data.encode('utf-8')).hexdigest()
 
 def build_tree(data_strings):
@@ -36,8 +37,12 @@ def build_tree(data_strings):
             #print(hash_index)
             if(hash_index<len(curr_hashes)):
                 # left +　right
-                right_hash = curr_hashes[hash_index] 
-            new_hashes.append(get_node_hash(left_hash+right_hash))
+                right_hash = curr_hashes[hash_index]
+            print("left_hash: ",left_hash)
+            print("right_hash: ",right_hash)
+            new_hash = get_node_hash(left_hash+right_hash)
+            print("new_hash: ",new_hash)
+            new_hashes.append(new_hash)
             hash_index+=1
         # print(len(new_hashes))
         # print("===new_hashes===")
