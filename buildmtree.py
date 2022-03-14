@@ -10,9 +10,43 @@ from hashlib import sha256
 
 test_data = ["alice", "bob", "carlol", "david"]
 
+class Node:
+    def __init__(self, data):
+        self.value = get_node_hash(data)
+        self.left = None
+        self.right = None
+
+class MerkleTree:
+    def __init__(self):
+        self.root = None
+        self.leafNodes = []
+    
+    def printTree(self):
+        print(self.root)
+    
+    def pre_leaf(self, data_strings):
+        leaf=[]
+        for data in data_strings:
+            leaf.append(Node(data))
+        return leaf
+    
+    # def buildTree(self):
+
+    # def pre_nodes(self)
+    
+    # def insertNode(self):
+
 def get_node_hash(data):
     print("data to hash: ",data)
     return sha256(data.encode('utf-8')).hexdigest()
+
+
+
+
+
+
+
+
 
 def build_tree(data_strings):
     tree = []
@@ -50,6 +84,14 @@ def build_tree(data_strings):
         tree.insert(0,new_hashes)
         curr_hashes=new_hashes
     return tree
+
+def find_largest_power_2(n):
+    return n/2
+
+def insert_node(tree, data_string):
+    if(len(tree)==0):
+        leaf_level = [get_node_hash(data_string)]
+        tree.append(leaf_level)
 
 # ./buildmtree.py [alice,bob,carlol,david]
 # no space
