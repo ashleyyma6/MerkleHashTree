@@ -45,9 +45,11 @@ def find_in_leaf(tree, input_hash):
 # return false or return an result array
 def find_in_tree(tree, input_hash):
     result = [] # hashes to hash with
+    
     index_in_leaf = find_in_leaf(tree,input_hash)
     if(index_in_leaf != -1):
         # input hash is found in leaf
+        result.append(input_hash)
         # check upper level hash
         curr_level_index = len(tree)-2 # start from the level above leaf
         curr_hash = "" # current hash of two
