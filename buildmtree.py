@@ -5,30 +5,79 @@
 # SHA_256
 # output file called merkle.tree containing the printout of the built tree.
 
+import math
 import sys
 from hashlib import sha256
 
 test_data = ["alice", "bob", "carlol", "david"]
 
-class Node:
-    def __init__(self, data):
-        self.value = get_node_hash(data)
-        self.left = None
-        self.right = None
+def get_largest_power_2(num):
+    power = int(math.log(num,2))
+    return int(pow(2,power))
 
+def get_node_hash(data):
+    print("data to hash: ",data)
+    return sha256(data.encode('utf-8')).hexdigest()
+
+class Node:
+    def __init__(self, data, left_child, right_child, parent, level):
+        self.data = data
+        self.hashv = get_node_hash(data)
+        self.parent = parent
+        self.left = left_child
+        self.right = right_child
+        self.level = level
+    
+    def add_left_child(self, left):
+        self.left = left
+    
+    def add_right_child(self, right):
+        self.right = right
+    
+    def add_parent(self, parent):
+        self.parent = parent
+    
+    def update_hash(self):
+        if self.data:
+            print("leaf")
+            self.hashv = get_node_hash(self.data)
+        else:
+            print("node")
+            left_h=""
+            right_h=""
+            if self.left:
+                left_h = self.left.hash
+            if self.right:
+                right_h = self.right.hash
+        self.hashv = get_node_hash(left_h+right_h)
+        
 class MerkleTree:
     def __init__(self):
         self.root = None
         self.leafNodes = []
     
+    def pre_leaf(self, data_strings):
+        for data in data_strings:
+            n = Node(data,None,None,None,None)
+            n.update_hash()
+            self.leafNodes.append(n)
+
+    def get_tree_level(self):
+        return get_largest_power_2(len(self.leafNodes))
+    
+    def build_tree(self):
+        if(self.root==None):
+            
+
+
+
+
+
+        
     def printTree(self):
         print(self.root)
     
-    def pre_leaf(self, data_strings):
-        leaf=[]
-        for data in data_strings:
-            leaf.append(Node(data))
-        return leaf
+
     
     # def buildTree(self):
 
@@ -36,9 +85,7 @@ class MerkleTree:
     
     # def insertNode(self):
 
-def get_node_hash(data):
-    print("data to hash: ",data)
-    return sha256(data.encode('utf-8')).hexdigest()
+
 
 
 
@@ -102,12 +149,12 @@ def load_input(input_string):
     #print(input_list)
     return input_list
 
-def export_tree(tree):
-    with open('merkle.tree','w') as f:
-        for level in tree:
-            # print(level)
-            line = ','.join(level)
-            f.write(line+'\n')
+# def export_tree(tree):
+#     with open('merkle.tree','w') as f:
+#         for level in tree:
+#             # print(level)
+#             line = ','.join(level)
+#             f.write(line+'\n')
 
 def main():
     input_list = test_data
@@ -117,7 +164,7 @@ def main():
     merkle_hash_tree = build_tree(input_list)
     # print("===merkle_hash_tree===")
     # print(merkle_hash_tree)
-    export_tree(merkle_hash_tree)
-    print("export!!")
+    # export_tree(merkle_hash_tree)
+    # print("export!!")
 
 main()
