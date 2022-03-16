@@ -16,13 +16,13 @@ def get_largest_power_2(num):
     return int(pow(2,power))
 
 def get_node_hash(data):
-    print("data to hash: ",data)
+    # print("data to hash: ",data)
     return sha256(data.encode('utf-8')).hexdigest()
 
 class Node:
     def __init__(self, data, left_child, right_child, parent, level):
         self.data = data
-        self.hashv = get_node_hash(data)
+        self.hashv = None
         self.parent = parent
         self.left = left_child
         self.right = right_child
@@ -39,24 +39,25 @@ class Node:
     
     def update_hash(self):
         if self.data:
-            print("leaf")
+            # print("leaf")
             self.hashv = get_node_hash(self.data)
         else:
             print("node")
             left_h=""
             right_h=""
             if self.left:
-                left_h = self.left.hash
+                left_h = self.left.hashv
             if self.right:
-                right_h = self.right.hash
-        self.hashv = get_node_hash(left_h+right_h)
+                right_h = self.right.hashv
+            self.hashv = get_node_hash(left_h+right_h)
         
 class MerkleTree:
     def __init__(self):
         self.root = None
+        self.tree = []
         self.leafNodes = []
     
-    def pre_leaf(self, data_strings):
+    def add_leaf(self, data_strings):
         for data in data_strings:
             n = Node(data,None,None,None,None)
             n.update_hash()
@@ -64,89 +65,75 @@ class MerkleTree:
 
     def get_tree_level(self):
         return get_largest_power_2(len(self.leafNodes))
-    
-    def build_tree(self):
-        if(self.root==None):
             
+    def build_tree(self):
+        tree = []
+        tree.append(self.leafNodes) #add leaf node hashes to tree
+        # print("===leaf_node_hashes===")
+        # print(leaf_node_hashes)
+        curr_nodes = self.leafNodes
+        while(len(curr_nodes)!=1):
+            #print(curr_hashes)
+            node_index = 0
+            new_upper_nodes = []
+            while(node_index<len(curr_nodes)):
+                left_child = curr_nodes[node_index]
+                node_index+=1
+                right_child = None
+                #print(hash_index)
+                if(node_index<len(curr_nodes)):
+                    # left +　right
+                    right_child = curr_nodes[node_index]  
+                # set up parent, link to child         
+                if(right_child == None):
+                    # no right child
+                    print("no right child")
+                    # Empty intermediate node, no hash should be update
+                    # only for link to the left child at lower level
+                    parent = Node(None,left_child,None,None,None)
+                    left_child.parent = parent
+                    new_upper_nodes.append(parent)
+                else:
+                    # right_child is not none
+                    # if right child is a Empty intermediate node, need to reach to lower level to get hash
+                    while(right_child.hashv==None):
+                        right_child = right_child.left
+                    # new parent
+                    print("left_hash: ",left_child.hashv)
+                    print("right_hash: ",right_child.hashv)
+                    parent = Node(None,left_child,right_child,None,None)
+                    parent.update_hash()
+                    print("new_hash: ",parent.hashv)
+                    # add parent to child
+                    left_child.parent = parent
+                    right_child.parent = parent                
+                    new_upper_nodes.append(parent)    
+                node_index+=1
+            # print(len(new_hashes))
+            # print("===new_hashes===")
+            # print(new_hashes)        
+            tree.insert(0,new_upper_nodes)
+            curr_nodes=new_upper_nodes
+        return tree
 
-
-
-
-
-        
     def printTree(self):
-        print(self.root)
-    
+        for level in self.tree:
+            print("=====")
+            for node in level:
+                print(node.hashv)
 
-    
-    # def buildTree(self):
-
-    # def pre_nodes(self)
-    
-    # def insertNode(self):
-
-
-
-
-
-
-
-
-
-
-
-def build_tree(data_strings):
-    tree = []
-    data_index = 0
-    leaf_node_hashes = []
-    while(data_index<len(data_strings)):
-        leaf_node_hashes.append(get_node_hash(data_strings[data_index]))
-        data_index+=1
-    tree.append(leaf_node_hashes) #add leaf node hashes to tree
-    # print("===leaf_node_hashes===")
-    # print(leaf_node_hashes)
-    
-    curr_hashes = leaf_node_hashes
-    while(len(curr_hashes)!=1):
-        #print(curr_hashes)
-        hash_index = 0
-        new_hashes = []
-        while(hash_index<len(curr_hashes)):
-            left_hash = curr_hashes[hash_index]
-            hash_index+=1
-            right_hash = ""
-            #print(hash_index)
-            if(hash_index<len(curr_hashes)):
-                # left +　right
-                right_hash = curr_hashes[hash_index]
-            print("left_hash: ",left_hash)
-            print("right_hash: ",right_hash)
-            new_hash = get_node_hash(left_hash+right_hash)
-            print("new_hash: ",new_hash)
-            new_hashes.append(new_hash)
-            hash_index+=1
-        # print(len(new_hashes))
-        # print("===new_hashes===")
-        # print(new_hashes)        
-        tree.insert(0,new_hashes)
-        curr_hashes=new_hashes
-    return tree
-
-def find_largest_power_2(n):
-    return n/2
-
-def insert_node(tree, data_string):
-    if(len(tree)==0):
-        leaf_level = [get_node_hash(data_string)]
-        tree.append(leaf_level)
+# def insert_node(tree, data_string):
+#     if(len(tree)==0):
+#         leaf_level = [get_node_hash(data_string)]
+#         tree.append(leaf_level)
 
 # ./buildmtree.py [alice,bob,carlol,david]
 # no space
 def load_input(input_string):
     input = input_string[1:-1]
-    #print(input)
     input_list = input.split(',')
     #print(input_list)
+    # print("load input")
     return input_list
 
 # def export_tree(tree):
@@ -161,7 +148,10 @@ def main():
     if(len(sys.argv)>1):
         #print(sys.argv[1])
         input_list = load_input(sys.argv[1])
-    merkle_hash_tree = build_tree(input_list)
+    merkle_hash_tree = MerkleTree()
+    merkle_hash_tree.add_leaf(input_list)
+    merkle_hash_tree.build_tree()
+    merkle_hash_tree.printTree()
     # print("===merkle_hash_tree===")
     # print(merkle_hash_tree)
     # export_tree(merkle_hash_tree)
