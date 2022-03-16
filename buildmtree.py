@@ -26,7 +26,7 @@ class Node:
         self.parent = parent
         self.left = left_child
         self.right = right_child
-        
+
     def update_hash(self, right=None):
         left_h=""
         right_h=""
@@ -40,7 +40,6 @@ class Node:
         
 class MerkleTree:
     def __init__(self):
-        self.root = None
         self.tree = []
         self.leafNodes = []
         print("creat tree")
@@ -51,9 +50,6 @@ class MerkleTree:
             self.leafNodes.append(n)
         print("add leaf: ",len(self.leafNodes))
         self.printLeaf()
-
-    def get_tree_level(self):
-        return get_largest_power_2(len(self.leafNodes))
             
     def build_tree(self):
         tree = []
@@ -145,12 +141,18 @@ def export_tree(tree):
         f.write("=== Tree structure with trimed hash ===\n")
         f.write(export_tree_structure(tree[0][0],0))
         #print_tree_structure(tree[0][0],0)
+        print("export!!")
 
 def export_tree_structure(root, level):
     line = ""
     spaces = '|     ' * level
     if(root.hashv):
-        line +=(spaces+'-'+root.hashv[0:5]+"\n")
+        d=''
+        if(root.data):
+            d = root.data
+            line +=(spaces+'-'+root.hashv[0:5]+'-'+d+"\n")
+        else:
+            line +=(spaces+'-'+root.hashv[0:5]+"\n")
     else: 
         line +=(spaces+'-'+"none"+"\n")
     if not root.data:
@@ -184,10 +186,7 @@ def main():
     merkle_hash_tree = MerkleTree()
     merkle_hash_tree.add_leaf(input_list)
     merkle_hash_tree.tree= merkle_hash_tree.build_tree()
-    merkle_hash_tree.printTree()
-    # print("===merkle_hash_tree===")
-    # print(merkle_hash_tree)
+    #merkle_hash_tree.printTree()
     export_tree(merkle_hash_tree.tree)
-    # print("export!!")
 
 main()
