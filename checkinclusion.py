@@ -111,58 +111,52 @@ class MerkleTree:
         return -1
     
     # return false or return an result array
-    def find_in_tree(self,tree, input_hash):
+    def find_in_tree(self, tree, input_hash):
         result = [] # hashes to hash with
-        index_in_leaf = self.find_in_leaf(tree,input_hash)
+        index_in_leaf = self.find_in_leaf(input_hash)
         if(index_in_leaf != -1):
             # input hash is found in leaf
             result.append(input_hash)
             # check upper level hash
-            curr_level_index = len(tree)-2 # start from the level above leaf
             curr_hash = "" # current hash of two
-            index1 = index_in_leaf # index1 = the index of current hash
-            while(curr_level_index>-1):
-                curr_level_nodes = tree[curr_level_index]
-                print("curr_level_index: ",curr_level_index)
-                print("curr_level_nodes: ",curr_level_nodes)
-        
+            node1 = tree[(len(tree)-1)][index_in_leaf] # leaf node
+            while(node1.parent!=None):
                 # find the new hash of two in lower level
-                lower_level_index = curr_level_index+1
-                hash1 = tree[lower_level_index][index1]
-                hash2 = "" # index2 = the index of another hash to hash with
-                two_hash_to_hash = ""
-                # find index2, hash2
-                if((index1 % 2)==0):
-                    print("index 1 even")
-                    index2 = index1+1
-                    if(index2<len(tree[lower_level_index])):
-                        hash2 = tree[lower_level_index][index2]
-                    two_hash_to_hash = hash1+hash2
+                parent_node = node1.parent
+                node2 = None 
+                two_hashes = ""
+                if(parent_node.left == node1):
+                    print("node 1 left child")
+                    node2 = parent_node.right
+                    if(node2 == None):
+                        print("no right sibiling")
+                        node1 = parent_node
+                        # no anther node to hash with, go to upper level find another node
+                        # then from intermediate note, get to a node to hash
+                        continue
+                    while(node2.hashv == None):
+                        # empty intermediate node, go to bottom
+                        node2 = node2.left
+                    two_hashes = node1.hashv+node2.hashv
                 else:
-                    print("index 1 odd")
-                    hash2 = tree[lower_level_index][index1-1]
-                    two_hash_to_hash = hash2+hash1
-                print("hash1: ",hash1)
-                print("hash2: ",hash2)
-                result.append(hash2)
+                    print("node 1 right child, must have left sibling")
+                    node2 = parent_node.left
+                    while(node1.hashv == None):
+                        node1 = node1.left
+                    two_hashes = node2.hashv+node1.hashv
+                print("hash1: ",node1.hashv)
+                print("hash2: ",node2.hashv)
+                result.append(node2.hashv)
                 # find new hash to check for the upper level
-                curr_hash = get_node_hash(two_hash_to_hash)
-                print("get new hash: ",curr_hash)
-                
-                # check current level
                 # curr_hash have new generated hash stored
-                # find it in the current level
-                try:
-                    index1 = curr_level_nodes.index(curr_hash)
-                except ValueError:
-                    # not exists, finish return function
-                    print("not find in current level: ",curr_level_index)
+                curr_hash = get_node_hash(two_hashes)
+                print("get new hash: ",curr_hash)
+                if(parent_node.hashv == curr_hash):
+                    print("find parent hash match")
+                    node1 = parent_node
+                else:
+                    print("not match")
                     return -1
-                else: 
-                    print("find at ", index1)
-                    curr_level_index-=1
-                    # find the hash exists
-                
             return result
         else:
             print("input is not in the tree")
@@ -202,11 +196,15 @@ if(len(sys.argv)>1):
     # merkle_hash_tree.printLeaf()
     merkle_hash_tree.tree = merkle_hash_tree.rebuild_tree(input_hashes)
     # merkle_hash_tree.printTree()
-    # result = find_in_tree(merkle_hash_tree, check)
-    # if(result != -1):
-    #     print("Yes", result)
-    # else:
-    #     print("No")
+    result = merkle_hash_tree.find_in_tree(merkle_hash_tree.tree, hash)
+    if(result != -1):
+        print("Yes", result)
+        result_trimmed = []
+        for h in result:
+            result_trimmed.append(h[0:5])
+        print("trimmed version: ",result_trimmed)
+    else:
+        print("No")
 else:
     print("missing input")
 
