@@ -20,38 +20,23 @@ def get_node_hash(data):
     return sha256(data.encode('utf-8')).hexdigest()
 
 class Node:
-    def __init__(self, data, left_child, right_child, parent, level):
+    def __init__(self, data, hash, left_child, right_child, parent):
         self.data = data
-        self.hashv = None
+        self.hashv = hash
         self.parent = parent
         self.left = left_child
         self.right = right_child
-        self.level = level
-    
-    def add_left_child(self, left):
-        self.left = left
-    
-    def add_right_child(self, right):
-        self.right = right
-    
-    def add_parent(self, parent):
-        self.parent = parent
-    
+        
     def update_hash(self, right=None):
-        if self.data:
-            print("leaf: ",self.data)
-            self.hashv = get_node_hash(self.data)
+        left_h=""
+        right_h=""
+        if self.left.hashv:
+            left_h = self.left.hashv
+        if self.right.hashv:
+            right_h = self.right.hashv
         else:
-            print("node")
-            left_h=""
-            right_h=""
-            if self.left.hashv:
-                left_h = self.left.hashv
-            if self.right.hashv:
-                right_h = self.right.hashv
-            else:
-                right_h = right
-            self.hashv = get_node_hash(left_h+right_h)
+            right_h = right
+        self.hashv = get_node_hash(left_h+right_h)
         
 class MerkleTree:
     def __init__(self):
@@ -62,8 +47,7 @@ class MerkleTree:
     
     def add_leaf(self, data_strings):
         for data in data_strings:
-            n = Node(data,None,None,None,None)
-            n.update_hash()
+            n = Node(data,get_node_hash(data),None,None,None)
             self.leafNodes.append(n)
         print("add leaf: ",len(self.leafNodes))
         self.printLeaf()
@@ -93,14 +77,14 @@ class MerkleTree:
                     print("no right child")
                     # Empty intermediate node, no hash should be update
                     # only for link to the left child at lower level
-                    parent = Node(None,left_child,None,None,None)
+                    parent = Node(None,None,left_child,None,None)
                     left_child.parent = parent
                     new_upper_nodes.append(parent)
                 else:
                     # right sibling child is not none
                     # if right child is a Empty intermediate node, need to reach to lower level to get hash
                     # new parent
-                    parent = Node(None,left_child,right_child,None,None)
+                    parent = Node(None,None,left_child,right_child,None)
                     # add parent to child
                     left_child.parent = parent
                     right_child.parent = parent 
@@ -125,14 +109,10 @@ class MerkleTree:
             print("=====")
             for node in level:
                 print(node.hashv)
+    
     def printLeaf(self):
         for node in self.leafNodes:
             print(node.hashv[0:5])
-
-# def insert_node(tree, data_string):
-#     if(len(tree)==0):
-#         leaf_level = [get_node_hash(data_string)]
-#         tree.append(leaf_level)
 
 # ./buildmtree.py [alice,bob,carlol,david]
 # ./buildmtree.py [0,1,2,3,4,5,6,7]
@@ -142,24 +122,72 @@ def load_input(input_string):
     print("load input: ",input_list)
     return input_list
 
-# def export_tree(tree):
-#     with open('merkle.tree','w') as f:
-#         for level in tree:
-#             # print(level)
-#             line = ','.join(level)
-#             f.write(line+'\n')
+def export_tree(tree):
+    with open('merkle.tree','w') as f:
+        f.write("===Compeleted Tree Hash in every tree level===\n")
+        for i in range(0,len(tree)):
+            hashes = []
+            for j in range(0,len(tree[i])):
+                s = ""
+                if(tree[i][j].hashv): 
+                    s+=str(tree[i][j].hashv)
+                else:
+                    s+='-1'
+                # s+=':'
+                # if(tree[i][j].data):
+                #     s+=str(tree[i][j].data)
+                # else:
+                #     s+='None'
+                hashes.append(s)
+            line = ','.join(hashes)
+            f.write(line+'\n')
+        # friendly view
+        f.write("=== Tree structure with trimed hash ===\n")
+        f.write(export_tree_structure(tree[0][0],0))
+        #print_tree_structure(tree[0][0],0)
 
+def export_tree_structure(root, level):
+    line = ""
+    spaces = '|     ' * level
+    if(root.hashv):
+        line +=(spaces+'-'+root.hashv[0:5]+"\n")
+    else: 
+        line +=(spaces+'-'+"none"+"\n")
+    if not root.data:
+        if(root.left):
+            str=export_tree_structure(root.left, level+1)
+            if str:
+                line+=str
+        if(root.right):
+            str=export_tree_structure(root.right, level+1)
+            if str:
+                    line+=str
+    return line
+
+def print_tree_structure(root, level):
+    spaces = '|    '*level
+    if(root):
+        if(root.hashv):
+            print(spaces+'-'+root.hashv[0:5])
+        else: 
+            print(spaces+'-'+"none")
+    if not root.data:
+        if(root.left):
+            print_tree_structure(root.left, level+1)
+        if(root.right):
+            print_tree_structure(root.right, level+1)
+        
 def main():
     input_list = test_data
     if(len(sys.argv)>1):
         input_list = load_input(sys.argv[1])
     merkle_hash_tree = MerkleTree()
     merkle_hash_tree.add_leaf(input_list)
-    merkle_hash_tree.build_tree()
-    # merkle_hash_tree.printTree()
+    merkle_hash_tree.tree= merkle_hash_tree.build_tree()
+    merkle_hash_tree.printTree()
     # print("===merkle_hash_tree===")
     # print(merkle_hash_tree)
-    # export_tree(merkle_hash_tree)
+    export_tree(merkle_hash_tree.tree)
     # print("export!!")
 
 main()
