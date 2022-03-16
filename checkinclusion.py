@@ -13,6 +13,8 @@
 # 4. get hashes, compute new root, compare with old root
 
 from logging import exception
+from operator import truediv
+from re import I
 import sys
 from hashlib import sha256
 
@@ -99,19 +101,15 @@ class MerkleTree:
         return tree
 
     # check if input hash is in leaf
-    def find_in_leaf(tree, input_hash):
-        leaf = tree[-1]
-        flag = False
-        # print("leaf nodes: ", leaf)
-        try:
-            index = leaf.index(input_hash)
-        except ValueError: 
-            print("not find in leaf")
-            return -1
-        else: 
-            print("find in leaf at: ",index)
-            return index
-
+    def find_in_leaf(self, input):
+        leaves = self.tree[-1]
+        for i in range(0,len(leaves)):
+            if (leaves[i].hashv == input):
+                print("find in leaf at: ",i)
+                return i
+        print("not find in leaf")
+        return -1
+    
     # return false or return an result array
     def find_in_tree(self,tree, input_hash):
         result = [] # hashes to hash with
@@ -183,14 +181,7 @@ class MerkleTree:
 def load_input(input_string):
     return get_node_hash(input_string)
 
-def load_tree():
-    input_tree = []
-    with open('merkle.tree','r') as f:
-        for line in f:
-            input_tree.append(line.rstrip().split(','))
-    # print("load tree", input_tree)
-    return input_tree
-
+# for test
 def print_tree_structure(root, level):
     spaces = '|    '*level
     if(root):
@@ -204,7 +195,7 @@ def print_tree_structure(root, level):
             print_tree_structure(root.right, level+1)
 
 if(len(sys.argv)>1):
-    check = load_input(sys.argv[1])
+    hash = load_input(sys.argv[1])
     merkle_hash_tree = MerkleTree()
     input_hashes = merkle_hash_tree.load_hashes()
     merkle_hash_tree.add_leaf(input_hashes)
