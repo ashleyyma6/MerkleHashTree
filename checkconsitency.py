@@ -108,33 +108,40 @@ class MerkleTree:
         for node in self.leafNodes:
             print(node.hashv[0:5])
 
-def proof(m, newTree):
+def proof(m, tree_leaves):
+    # result array holds hashes
+    result = []
     print("proof")
-    return subProof(m,newTree ,True, newTree) # subProof(m,D[n],True)
+    # PROOF(m, D[n]) = SUBPROOF(m, D[n], true)
+    subProof(m,tree_leaves,True,tree_leaves, result)
+    return result
 
-def subProof(m, subTree, b, newTree):
-    n = len(subTree)# tree(len) = n for now
-    print("subproof: ",b)
+def subProof(m, inputs, b, tree_leaves, result):
+    n = len(inputs) # tree(len) = n for now
+    print("subproof")
     if(m==n):
         if b:
-            return "" # SUBPROOF(m, D[m], true) = {}
+            return ""# SUBPROOF(m, D[m], true) = {}
         else:
-            return get_subtree_hash(newTree,0,m) # SUBPROOF(m, D[m], false) = {MTH(D[m])}
+            return get_subtree_hash(inputs,0,m) # SUBPROOF(m, D[m], false) = {MTH(D[m])}
     if(m<n):
         k = get_largest_power_2(n)
         if(m<=k):
             # SUBPROOF(m, D[n], b) = SUBPROOF(m, D[0:k], b) : MTH(D[k:n])
-            return subProof(m, D[0:K],b)+MTH(D[k:n])
+            result.append(subProof(m, tree_leaves[0:k], b, tree_leaves, result))
+            result.append(get_subtree_hash(tree_leaves,k,n))
         else:
             # SUBPROOF(m, D[n], b) = SUBPROOF(m - k, D[k:n], false) : MTH(D[0:k])
-            return subProof(m-k, D[k:n], False)+MTH(D[0:k])
+            result.append(subProof(m-k, tree_leaves[k:n], False, tree_leaves, result))
+            result.append(get_subtree_hash(tree_leaves,0,k))
 
-def get_subtree_hash(tree,start,end):
+def get_subtree_hash(tree_leaves,start,end):
     subTree = MerkleTree()
-    subTree.leafNodes=tree.leafNodes[start:end]
+    subTree.leafNodes=tree_leaves[start:end]
     subTree.tree = subTree.build_tree()
     subTree_hash = subTree.tree[0][0].hashv
     print(subTree_hash[0:5])
+    return subTree_hash
 
 def print_tree_structure(root, level):
     spaces = '|    '*level
@@ -173,6 +180,8 @@ if(len(sys.argv)>2):
         new_tree.add_leaf(new_list)
         old_tree.build_tree()
         new_tree.build_tree()
-        # is_subset = check_leaf_subset(old_tree.leafNodes,new_tree.leafNodes)
-        # print(is_subset)
-        get_subtree_hash(new_tree,2,4)
+        is_subset = check_leaf_subset(old_tree.leafNodes,new_tree.leafNodes)
+        if(is_subset):
+            result = proof(len(old_list),new_tree.leafNodes)
+            print(result)
+        # get_subtree_hash(new_tree,2,4)
