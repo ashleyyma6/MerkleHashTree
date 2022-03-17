@@ -12,9 +12,6 @@
 # 3. find which sub tree input at, get hashes
 # 4. get hashes, compute new root, compare with old root
 
-from logging import exception
-from operator import truediv
-from re import I
 import sys
 from hashlib import sha256
 

@@ -11,10 +11,6 @@ from hashlib import sha256
 
 test_data = ["alice", "bob", "carlol", "david"]
 
-def get_largest_power_2(num):
-    power = int(math.log(num,2))
-    return int(pow(2,power))
-
 def get_node_hash(data):
     # print("data to hash: ",data)
     return sha256(data.encode('utf-8')).hexdigest()
