@@ -14,6 +14,8 @@ def get_node_hash(data):
 
 def get_largest_power_2(num):
     power = int(math.log(num,2))
+    if(pow(2,power) == num):
+        power -= 1
     return int(pow(2,power))
 
 class Node:
@@ -39,20 +41,20 @@ class MerkleTree:
     def __init__(self):
         self.tree = []
         self.leafNodes = []
-        print("creat tree")
+        #print("creat tree")
     
     def add_leaf(self, data_strings):
         for data in data_strings:
             n = Node(data,get_node_hash(data),None,None,None)
             self.leafNodes.append(n)
-        print("add leaf: ",len(self.leafNodes))
+        #print("add leaf: ",len(self.leafNodes))
         self.printLeaf()
             
     def build_tree(self):
         tree = []
         tree.append(self.leafNodes) #add leaf node hashes to tree
         curr_nodes = self.leafNodes
-        print("curr_nodes loaded")
+        #print("curr_nodes loaded")
         while(len(curr_nodes)!=1):
             node_index = 0
             new_upper_nodes = []
@@ -67,7 +69,7 @@ class MerkleTree:
                 # set up parent, link to child         
                 if(right_child == None):
                     # no right sibling child
-                    print("no right child")
+                    #print("no right child")
                     # Empty intermediate node, no hash should be update
                     # only for link to the left child at lower level
                     parent = Node(None,None,left_child,None,None)
@@ -84,18 +86,18 @@ class MerkleTree:
                     # keep empty intermediate node in the tree
                     # while -> find the real right child hash
                     while(right_child.hashv==None):
-                        print("right sibling child is none")
+                        #print("right sibling child is none")
                         right_child = right_child.left
-                    print("left_hash: ",left_child.hashv[0:5])
-                    print("right_hash: ",right_child.hashv[0:5])
+                    #print("left_hash: ",left_child.hashv[0:5])
+                    #print("right_hash: ",right_child.hashv[0:5])
                     parent.update_hash(right_child.hashv)
-                    print("parent hash: ",parent.hashv[0:5])          
+                    #print("parent hash: ",parent.hashv[0:5])          
                     new_upper_nodes.append(parent)    
                 node_index+=1
-            print("add upper level nodes: ",len(new_upper_nodes))      
+            #print("add upper level nodes: ",len(new_upper_nodes))      
             tree.insert(0,new_upper_nodes)
             curr_nodes=new_upper_nodes
-            print_tree_structure(tree[0][0],0)
+            #print_tree_structure(tree[0][0],0)
         return tree
 
     def printTree(self):
@@ -113,34 +115,44 @@ def proof(m, tree_leaves):
     result = []
     print("proof")
     # PROOF(m, D[n]) = SUBPROOF(m, D[n], true)
-    subProof(m,tree_leaves,True,tree_leaves, result)
+    subProof(m,tree_leaves,True,result)
     return result
 
-def subProof(m, inputs, b, tree_leaves, result):
+def subProof(m, inputs, b, result):
     n = len(inputs) # tree(len) = n for now
-    print("subproof")
+    print("subproof, n =",n)
     if(m==n):
+        print("m=n")
         if b:
-            return ""# SUBPROOF(m, D[m], true) = {}
+            return # SUBPROOF(m, D[m], true) = {}
         else:
-            return get_subtree_hash(inputs,0,m) # SUBPROOF(m, D[m], false) = {MTH(D[m])}
+            return get_subtree_hash(inputs,0,m)# SUBPROOF(m, D[m], false) = {MTH(D[m])}
     if(m<n):
         k = get_largest_power_2(n)
+        print("m<n, k =",k)
         if(m<=k):
             # SUBPROOF(m, D[n], b) = SUBPROOF(m, D[0:k], b) : MTH(D[k:n])
-            result.append(subProof(m, tree_leaves[0:k], b, tree_leaves, result))
-            result.append(get_subtree_hash(tree_leaves,k,n))
+            r = subProof(m, inputs[0:k], b, result)
+            if r:
+                result.append(r)
+            result.append(get_subtree_hash(inputs,k,n))
         else:
             # SUBPROOF(m, D[n], b) = SUBPROOF(m - k, D[k:n], false) : MTH(D[0:k])
-            result.append(subProof(m-k, tree_leaves[k:n], False, tree_leaves, result))
-            result.append(get_subtree_hash(tree_leaves,0,k))
+            r = subProof(m-k, inputs[k:n], False, result)
+            if r:
+                result.append(r)
+            result.append(get_subtree_hash(inputs,0,k))
 
 def get_subtree_hash(tree_leaves,start,end):
-    subTree = MerkleTree()
-    subTree.leafNodes=tree_leaves[start:end]
-    subTree.tree = subTree.build_tree()
-    subTree_hash = subTree.tree[0][0].hashv
-    print(subTree_hash[0:5])
+    if((end-start)==1):
+        print("get_subtree_hash: ",tree_leaves[start].hashv[0:5])
+        return tree_leaves[start].hashv
+    else:
+        subTree = MerkleTree()
+        subTree.leafNodes=tree_leaves[start:end]
+        subTree.tree = subTree.build_tree()
+        subTree_hash = subTree.tree[0][0].hashv
+        print("get_subtree_hash: ",subTree_hash[0:5])
     return subTree_hash
 
 def print_tree_structure(root, level):
@@ -178,8 +190,9 @@ if(len(sys.argv)>2):
         old_tree.add_leaf(old_list)
         new_tree = MerkleTree()
         new_tree.add_leaf(new_list)
-        old_tree.build_tree()
-        new_tree.build_tree()
+        old_tree.tree = old_tree.build_tree()
+        new_tree.tree = new_tree.build_tree()
+        print_tree_structure(new_tree.tree[0][0],0)
         is_subset = check_leaf_subset(old_tree.leafNodes,new_tree.leafNodes)
         if(is_subset):
             result = proof(len(old_list),new_tree.leafNodes)
