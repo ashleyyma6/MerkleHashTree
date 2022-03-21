@@ -159,7 +159,7 @@ def export_tree_structure(root, level):
         if(root.right):
             str=export_tree_structure(root.right, level+1)
             if str:
-                    line+=str
+                line+=str
     return line
 
 def print_tree_structure(root, level):

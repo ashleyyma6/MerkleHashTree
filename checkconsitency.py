@@ -4,10 +4,8 @@
 # ./checkconsitency.py [alice,bob,carlol,david] [alice,bob,carlol,david,eve,fred]
 # ./checkconsitency.py [alice,bob,carlol,david] [alice,bob,david,eve,fred]
 import math
-from quopri import encode
 import sys
 from hashlib import sha256
-from tkinter import N
 
 def get_node_hash(data):
     return sha256(data.encode('utf-8')).hexdigest()
@@ -168,7 +166,7 @@ def print_tree_structure(root, level):
         if(root.right):
             print_tree_structure(root.right, level+1)
 
-def check_leaf_subset(old, new): #finished, just in case
+def check_leaf_subset(old, new):
     for i in range(0,len(old)):
         if(old[i].hashv != new[i].hashv):
             return False
@@ -181,8 +179,49 @@ def load_input(input_string):
     #print(input_list)
     return input_list
 
-# ./checkconsitency.py [0,1,2,3] [0,1,2,3,4]
-if(len(sys.argv)>2):
+def find_in_tree(tree,hash):
+    print("start find: ", hash)
+    for level in tree.tree:
+        for i in range(len(level)):
+            
+            if level[i].hashv == hash:
+                return i
+    return -1
+
+def verification(old_tree, new_tree, proof_result):
+    tree_hash = ""
+    result = proof_result
+    k = get_largest_power_2(len(new_tree.leafNodes))
+    if(len(old_tree.leafNodes) == k):
+        print("pass k")
+        tree_hash = get_node_hash(old_tree.tree[0][0].hashv+proof_result[0])
+        if tree_hash == new_tree.tree[0][0].hashv:
+            print("verified - k")
+            result.insert(0,old_tree.tree[0][0].hashv)
+            result.append(new_tree.tree[0][0].hashv)
+    else:
+        print("notpass k")
+        tree_hash = proof_result[0]
+        for i in range(1,len(proof_result)):
+            find = find_in_tree(new_tree, proof_result[i])#[node index]
+            if(find!=-1):
+                print("find at", find)
+                if (find%2)==0:
+                    print("find is even")
+                    tree_hash = get_node_hash(proof_result[i]+tree_hash)
+                else:
+                    tree_hash = get_node_hash(tree_hash+proof_result[i])
+                    print("find is odd")
+            print("loop i: ",i," tree hash: ",tree_hash)
+        print("final tree hash: ",tree_hash)
+        if tree_hash == new_tree.tree[0][0].hashv:
+            print("verified - find")
+            result.append(new_tree.tree[0][0].hashv)
+    return result
+    
+
+def main():
+    if(len(sys.argv)>2):
         #print(sys.argv[1])
         old_list = load_input(sys.argv[1])
         new_list = load_input(sys.argv[2])
@@ -195,6 +234,17 @@ if(len(sys.argv)>2):
         print_tree_structure(new_tree.tree[0][0],0)
         is_subset = check_leaf_subset(old_tree.leafNodes,new_tree.leafNodes)
         if(is_subset):
-            result = proof(len(old_list),new_tree.leafNodes)
-            print(result)
+            print("Yes")
+            proof_result = proof(len(old_list),new_tree.leafNodes)
+            print("proof_result: ",proof_result)
+            verify = verification(old_tree, new_tree,proof_result)
+            print(verify)
+        else:
+            print("No")
+
         # get_subtree_hash(new_tree,2,4)
+    else:
+        print("missing input")
+
+# ./checkconsitency.py [0,1,2,3] [0,1,2,3,4]
+main()

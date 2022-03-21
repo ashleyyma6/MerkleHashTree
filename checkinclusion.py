@@ -11,15 +11,9 @@
 # 2. find hash in the leaf
 # 3. find which sub tree input at, get hashes
 # 4. get hashes, compute new root, compare with old root
-import math
+
 import sys
 from hashlib import sha256
-
-def get_largest_power_2(num):
-    power = int(math.log(num,2))
-    if(pow(2,power) == num):
-        power -= 1
-    return int(pow(2,power))
 
 def get_node_hash(data):
     return sha256(data.encode('utf-8')).hexdigest()
@@ -37,7 +31,7 @@ class MerkleTree:
         self.leafNodes = []
         print("creat tree")
     
-    def load_hashes(self): #finished
+    def load_hashes(self):
         input_hashes = []
         with open('merkle.tree','r') as f:
             line=f.readline()
@@ -55,63 +49,13 @@ class MerkleTree:
             #print(input_hashes)
         return input_hashes
 
-    def add_leaf(self, input_hashes): # finished
+    def add_leaf(self, input_hashes):
         for hash in input_hashes[-1]:
             n = Node(hash,None,None,None)
             self.leafNodes.append(n)
         print("leaf added")
 
-    def build_tree(self):
-        tree = []
-        tree.append(self.leafNodes) #add leaf node hashes to tree
-        curr_nodes = self.leafNodes
-        #print("curr_nodes loaded")
-        while(len(curr_nodes)!=1):
-            node_index = 0
-            new_upper_nodes = []
-            while(node_index<len(curr_nodes)):
-                left_child = curr_nodes[node_index]
-                node_index+=1
-                right_child = None
-                #print(hash_index)
-                if(node_index<len(curr_nodes)):
-                    # left +　right
-                    right_child = curr_nodes[node_index]  
-                # set up parent, link to child         
-                if(right_child == None):
-                    # no right sibling child
-                    #print("no right child")
-                    # Empty intermediate node, no hash should be update
-                    # only for link to the left child at lower level
-                    parent = Node(None,None,left_child,None,None)
-                    left_child.parent = parent
-                    new_upper_nodes.append(parent)
-                else:
-                    # right sibling child is not none
-                    # if right child is a Empty intermediate node, need to reach to lower level to get hash
-                    # new parent
-                    parent = Node(None,None,left_child,right_child,None)
-                    # add parent to child
-                    left_child.parent = parent
-                    right_child.parent = parent 
-                    # keep empty intermediate node in the tree
-                    # while -> find the real right child hash
-                    while(right_child.hashv==None):
-                        #print("right sibling child is none")
-                        right_child = right_child.left
-                    #print("left_hash: ",left_child.hashv[0:5])
-                    #print("right_hash: ",right_child.hashv[0:5])
-                    parent.update_hash(right_child.hashv)
-                    #print("parent hash: ",parent.hashv[0:5])          
-                    new_upper_nodes.append(parent)    
-                node_index+=1
-            #print("add upper level nodes: ",len(new_upper_nodes))      
-            tree.insert(0,new_upper_nodes)
-            curr_nodes=new_upper_nodes
-            #print_tree_structure(tree[0][0],0)
-        return tree
-
-    def rebuild_tree(self,input_hashes): # finished
+    def rebuild_tree(self,input_hashes):
         tree = []
         tree.append(self.leafNodes) #add leaf node to tree
         curr_nodes = self.leafNodes
@@ -225,33 +169,6 @@ class MerkleTree:
         for node in self.leafNodes:
             print(node.hashv[0:5])
 
-def audit_path(m, inputs,result):
-    if (len(inputs)==1):
-        return
-    n = len(inputs)
-    if n >1:
-        k = get_largest_power_2(n)
-        if m < k:
-            # PATH(m, D[n]) = PATH(m, D[0:k]) : MTH(D[k:n]) for m < k
-            result.append(audit_path(m,inputs[0:k]))
-            result.append(get_subtree_hash(inputs,k,n))
-        else:
-            #  PATH(m, D[n]) = PATH(m - k, D[k:n]) : MTH(D[0:k]) for m >= k
-            result.append(audit_path(m-k,inputs[k:n]))
-            result.append(get_subtree_hash(inputs,0,k))
-            
-def get_subtree_hash(tree_leaves,start,end):
-    if((end-start)==1):
-        print("get_subtree_hash: ",tree_leaves[start].hashv[0:5])
-        return tree_leaves[start].hashv
-    else:
-        subTree = MerkleTree()
-        subTree.leafNodes=tree_leaves[start:end]
-        subTree.tree = subTree.build_tree()
-        subTree_hash = subTree.tree[0][0].hashv
-        print("get_subtree_hash: ",subTree_hash[0:5])
-    return subTree_hash
-
 def load_input(input_string):
     return get_node_hash(input_string)
 
@@ -268,23 +185,25 @@ def print_tree_structure(root, level):
         if(root.right):
             print_tree_structure(root.right, level+1)
 
-if(len(sys.argv)>1):
-    hash = load_input(sys.argv[1])
-    merkle_hash_tree = MerkleTree()
-    input_hashes = merkle_hash_tree.load_hashes()
-    merkle_hash_tree.add_leaf(input_hashes)
-    # merkle_hash_tree.printLeaf()
-    merkle_hash_tree.tree = merkle_hash_tree.rebuild_tree(input_hashes)
-    # merkle_hash_tree.printTree()
-    result = merkle_hash_tree.find_in_tree(merkle_hash_tree.tree, hash)
-    if(result != -1):
-        print("Yes", result)
-        result_trimmed = []
-        for h in result:
-            result_trimmed.append(h[0:5])
-        print("trimmed version: ",result_trimmed)
+def main():
+    if(len(sys.argv)>1):
+        hash = load_input(sys.argv[1])
+        merkle_hash_tree = MerkleTree()
+        input_hashes = merkle_hash_tree.load_hashes()
+        merkle_hash_tree.add_leaf(input_hashes)
+        # merkle_hash_tree.printLeaf()
+        merkle_hash_tree.tree = merkle_hash_tree.rebuild_tree(input_hashes)
+        # merkle_hash_tree.printTree()
+        result = merkle_hash_tree.find_in_tree(merkle_hash_tree.tree, hash)
+        if(result != -1):
+            print("Yes", result)
+            result_trimmed = []
+            for h in result:
+                result_trimmed.append(h[0:5])
+            print("trimmed version: ",result_trimmed)
+        else:
+            print("No")
     else:
-        print("No")
-else:
-    print("missing input")
+        print("missing input")
 
+main()
