@@ -4,6 +4,7 @@
 # converging to a single hash， root
 # SHA_256
 # output file called merkle.tree containing the printout of the built tree.
+# ./buildmtree.py [alice, bob, carlol, david]
 
 import math
 import sys
@@ -146,9 +147,9 @@ def export_tree_structure(root, level):
         d=''
         if(root.data):
             d = root.data
-            line +=(spaces+'-'+root.hashv[0:5]+'-'+d+"\n")
+            line +=(spaces+'-'+root.hashv+"\n")
         else:
-            line +=(spaces+'-'+root.hashv[0:5]+"\n")
+            line +=(spaces+'-'+root.hashv+"\n")
     else: 
         line +=(spaces+'-'+"none"+"\n")
     if not root.data:

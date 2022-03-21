@@ -3,6 +3,9 @@
 # plus all the intermediate node hashes of the newly appended strings
 # ./checkconsitency.py [alice,bob,carlol,david] [alice,bob,carlol,david,eve,fred]
 # ./checkconsitency.py [alice,bob,carlol,david] [alice,bob,david,eve,fred]
+# ./checkconsitency.py [alice,bob,carlol,david] [alice,bob,carol,eve,fred,davis]
+# cat merkle.trees
+
 import math
 import sys
 from hashlib import sha256
@@ -46,7 +49,7 @@ class MerkleTree:
             n = Node(data,get_node_hash(data),None,None,None)
             self.leafNodes.append(n)
         #print("add leaf: ",len(self.leafNodes))
-        self.printLeaf()
+        #self.printLeaf()
             
     def build_tree(self):
         tree = []
@@ -111,23 +114,23 @@ class MerkleTree:
 def proof(m, tree_leaves):
     # result array holds hashes
     result = []
-    print("proof")
+    #print("proof")
     # PROOF(m, D[n]) = SUBPROOF(m, D[n], true)
     subProof(m,tree_leaves,True,result)
     return result
 
 def subProof(m, inputs, b, result):
     n = len(inputs) # tree(len) = n for now
-    print("subproof, n =",n)
+    #print("subproof, n =",n)
     if(m==n):
-        print("m=n")
+        #print("m=n")
         if b:
             return # SUBPROOF(m, D[m], true) = {}
         else:
             return get_subtree_hash(inputs,0,m)# SUBPROOF(m, D[m], false) = {MTH(D[m])}
     if(m<n):
         k = get_largest_power_2(n)
-        print("m<n, k =",k)
+        #print("m<n, k =",k)
         if(m<=k):
             # SUBPROOF(m, D[n], b) = SUBPROOF(m, D[0:k], b) : MTH(D[k:n])
             r = subProof(m, inputs[0:k], b, result)
@@ -143,14 +146,14 @@ def subProof(m, inputs, b, result):
 
 def get_subtree_hash(tree_leaves,start,end):
     if((end-start)==1):
-        print("get_subtree_hash: ",tree_leaves[start].hashv[0:5])
+        #print("get_subtree_hash: ",tree_leaves[start].hashv[0:5])
         return tree_leaves[start].hashv
     else:
         subTree = MerkleTree()
         subTree.leafNodes=tree_leaves[start:end]
         subTree.tree = subTree.build_tree()
         subTree_hash = subTree.tree[0][0].hashv
-        print("get_subtree_hash: ",subTree_hash[0:5])
+        #print("get_subtree_hash: ",subTree_hash[0:5])
     return subTree_hash
 
 def print_tree_structure(root, level):
@@ -181,44 +184,108 @@ def load_input(input_string):
 
 def find_in_tree(tree,hash):
     print("start find: ", hash)
-    for level in tree.tree:
-        for i in range(len(level)):
-            
-            if level[i].hashv == hash:
-                return i
-    return -1
+    for i in range(0,len(tree.tree)):
+        for j in range(0,len(tree.tree[i])):
+            if tree.tree[i][j].hashv == hash:
+                return [i,j]
+    return [-1]
 
 def verification(old_tree, new_tree, proof_result):
     tree_hash = ""
     result = proof_result
     k = get_largest_power_2(len(new_tree.leafNodes))
     if(len(old_tree.leafNodes) == k):
-        print("pass k")
+        #print("pass k")
         tree_hash = get_node_hash(old_tree.tree[0][0].hashv+proof_result[0])
         if tree_hash == new_tree.tree[0][0].hashv:
-            print("verified - k")
+            #print("verified - k")
             result.insert(0,old_tree.tree[0][0].hashv)
             result.append(new_tree.tree[0][0].hashv)
     else:
-        print("notpass k")
+        #print("notpass k")
         tree_hash = proof_result[0]
         for i in range(1,len(proof_result)):
-            find = find_in_tree(new_tree, proof_result[i])#[node index]
-            if(find!=-1):
-                print("find at", find)
-                if (find%2)==0:
-                    print("find is even")
-                    tree_hash = get_node_hash(proof_result[i]+tree_hash)
-                else:
+            find1 = find_in_tree(new_tree, proof_result[i])#[node index]
+            find2 = find_in_tree(new_tree, tree_hash)#[node index]
+            if(find1[0]!=-1):
+                #print("find at", find2)
+                if(find2[0] == find1[0]):
+                    if (find1[1]%2)==0:
+                        #print("find is even")
+                        tree_hash = get_node_hash(proof_result[i]+tree_hash)
+                    else:
+                        tree_hash = get_node_hash(tree_hash+proof_result[i])
+                        #print("find is odd")
+                else: 
                     tree_hash = get_node_hash(tree_hash+proof_result[i])
-                    print("find is odd")
-            print("loop i: ",i," tree hash: ",tree_hash)
-        print("final tree hash: ",tree_hash)
+                    #print("find is seperated in multiple level")
+            #print("loop i: ",i," tree hash: ",tree_hash)
+        #print("final tree hash: ",tree_hash)
         if tree_hash == new_tree.tree[0][0].hashv:
-            print("verified - find")
+            #print("verified - find")
             result.append(new_tree.tree[0][0].hashv)
+        else: 
+            print("error in verification")
+            return False
     return result
-    
+
+def export_tree(tree1,tree2):
+    with open('merkle.tree','w') as f:
+        # f.write("=== Compeleted Tree Hash in every tree level for old version tree ===\n")
+        # for i in range(0,len(tree1)):
+        #     hashes = []
+        #     for j in range(0,len(tree1[i])):
+        #         s = ""
+        #         if(tree1[i][j].hashv): 
+        #             s+=str(tree1[i][j].hashv)
+        #         else:
+        #             s+='-1'
+        #         hashes.append(s)
+        #     line = ','.join(hashes)
+        #     f.write(line+'\n')
+        # friendly view
+        f.write("=== Tree structure with trimed hash for old version tree ===\n")
+        f.write(export_tree_structure(tree1[0][0],0))
+        # f.write("=== Compeleted Tree Hash in every tree level for new version tree ===\n")
+        # for i in range(0,len(tree2)):
+        #     hashes = []
+        #     for j in range(0,len(tree2[i])):
+        #         s = ""
+        #         if(tree2[i][j].hashv): 
+        #             s+=str(tree2[i][j].hashv)
+        #         else:
+        #             s+='-1'
+        #         hashes.append(s)
+        #     line = ','.join(hashes)
+        #     f.write(line+'\n')
+        # friendly view
+        f.write("=== Tree structure with trimed hash for new version tree ===\n")
+        f.write(export_tree_structure(tree2[0][0],0))
+        #print_tree_structure(tree[0][0],0)
+        #print("exported!")
+
+def export_tree_structure(root, level):
+    line = ""
+    spaces = '|     ' * level
+    if(root.hashv):
+        d=''
+        if(root.data):
+            d = root.data
+            line +=(spaces+'-'+root.hashv+"\n")
+        else:
+            line +=(spaces+'-'+root.hashv+"\n")
+    else: 
+        line +=(spaces+'-'+"none"+"\n")
+    if not root.data:
+        if(root.left):
+            str=export_tree_structure(root.left, level+1)
+            if str:
+                line+=str
+        if(root.right):
+            str=export_tree_structure(root.right, level+1)
+            if str:
+                line+=str
+    return line
 
 def main():
     if(len(sys.argv)>2):
@@ -231,17 +298,20 @@ def main():
         new_tree.add_leaf(new_list)
         old_tree.tree = old_tree.build_tree()
         new_tree.tree = new_tree.build_tree()
-        print_tree_structure(new_tree.tree[0][0],0)
+        #print_tree_structure(new_tree.tree[0][0],0)
         is_subset = check_leaf_subset(old_tree.leafNodes,new_tree.leafNodes)
         if(is_subset):
-            print("Yes")
+            #print("Yes")
             proof_result = proof(len(old_list),new_tree.leafNodes)
-            print("proof_result: ",proof_result)
+            #print("proof_result: ",proof_result)
             verify = verification(old_tree, new_tree,proof_result)
-            print(verify)
+            if(verify!=False):
+                print("Yes",verify)
+            else: 
+                print("No")
         else:
             print("No")
-
+        export_tree(old_tree.tree,new_tree.tree)
         # get_subtree_hash(new_tree,2,4)
     else:
         print("missing input")

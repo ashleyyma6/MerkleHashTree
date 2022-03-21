@@ -29,7 +29,7 @@ class MerkleTree:
     def __init__(self):
         self.tree = []
         self.leafNodes = []
-        print("creat tree")
+        #print("creat tree")
     
     def load_hashes(self):
         input_hashes = []
@@ -39,7 +39,7 @@ class MerkleTree:
                 line=f.readline()
                 while(len(line)>0):
                     if(line.find("structure")>0):
-                        print("finish load")
+                        #print("finish load")
                         break
                     #print(line[:-1])
                     input_hashes.append(line[:-1].rstrip().split(','))
@@ -53,14 +53,14 @@ class MerkleTree:
         for hash in input_hashes[-1]:
             n = Node(hash,None,None,None)
             self.leafNodes.append(n)
-        print("leaf added")
+        #print("leaf added")
 
     def rebuild_tree(self,input_hashes):
         tree = []
         tree.append(self.leafNodes) #add leaf node to tree
         curr_nodes = self.leafNodes
         curr_level = len(input_hashes)-1
-        print("curr_nodes loaded")
+        #print("curr_nodes loaded")
         while(len(curr_nodes)!=1):
             parent_level=curr_level-1
             node_index = 0
@@ -71,7 +71,7 @@ class MerkleTree:
                 # set up parent, link to child         
                 if(parent_hash == "-1"):
                     # no right sibling child
-                    print("parent have no right child")
+                    #print("parent have no right child")
                     # Empty intermediate node, no hash should be update
                     # only for link to the left child at lower level
                     left_child = curr_nodes[node_index]
@@ -90,7 +90,7 @@ class MerkleTree:
                     right_child.parent = parent         
                     upper_nodes.append(parent)    
                 node_index+=2
-            print("rebuild upper level nodes: ",len(upper_nodes))      
+            #print("rebuild upper level nodes: ",len(upper_nodes))      
             tree.insert(0,upper_nodes)
             curr_nodes=upper_nodes
             curr_level=parent_level
@@ -102,9 +102,9 @@ class MerkleTree:
         leaves = self.tree[-1]
         for i in range(0,len(leaves)):
             if (leaves[i].hashv == input):
-                print("find in leaf at: ",i)
+                #print("find in leaf at: ",i)
                 return i
-        print("not find in leaf")
+        #print("not find in leaf")
         return -1
     
     # return false or return an result array
@@ -123,10 +123,10 @@ class MerkleTree:
                 node2 = None 
                 two_hashes = ""
                 if(parent_node.left == node1):
-                    print("node 1 left child")
+                    #print("node 1 left child")
                     node2 = parent_node.right
                     if(node2 == None):
-                        print("no right sibiling")
+                        #print("no right sibiling")
                         node1 = parent_node
                         # no anther node to hash with, go to upper level find another node
                         # then from intermediate note, get to a node to hash
@@ -136,27 +136,27 @@ class MerkleTree:
                         node2 = node2.left
                     two_hashes = node1.hashv+node2.hashv
                 else:
-                    print("node 1 right child, must have left sibling")
+                    #print("node 1 right child, must have left sibling")
                     node2 = parent_node.left
                     while(node1.hashv == None):
                         node1 = node1.left
                     two_hashes = node2.hashv+node1.hashv
-                print("hash1: ",node1.hashv)
-                print("hash2: ",node2.hashv)
+                #print("hash1: ",node1.hashv)
+                #print("hash2: ",node2.hashv)
                 result.append(node2.hashv)
                 # find new hash to check for the upper level
                 # curr_hash have new generated hash stored
                 curr_hash = get_node_hash(two_hashes)
-                print("get new hash: ",curr_hash)
+                #print("get new hash: ",curr_hash)
                 if(parent_node.hashv == curr_hash):
-                    print("find parent hash match")
+                    #print("find parent hash match")
                     node1 = parent_node
                 else:
-                    print("not match")
+                    #print("not match")
                     return -1
             return result
         else:
-            print("input is not in the tree")
+            #print("input is not in the tree")
             return -1
 
     def printTree(self):
@@ -172,7 +172,7 @@ class MerkleTree:
 def load_input(input_string):
     return get_node_hash(input_string)
 
-# for test
+# for debug
 def print_tree_structure(root, level):
     spaces = '|    '*level
     if(root):
@@ -200,7 +200,7 @@ def main():
             result_trimmed = []
             for h in result:
                 result_trimmed.append(h[0:5])
-            print("trimmed version: ",result_trimmed)
+            #print("trimmed version: ",result_trimmed)
         else:
             print("No")
     else:
